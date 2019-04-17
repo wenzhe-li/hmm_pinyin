@@ -20,17 +20,12 @@ py = py['py']
 with open('./dataset/table/py2hz.txt', 'r', encoding='gbk') as f:
     lines = f.readlines()
 
+prior = sp.load_npz('prior.npz').toarray()
 transition1 = sp.load_npz('transition1.npz').toarray()
 transition2 = sp.load_npz('transition2.npz').toarray()
-print(transition1.shape)
-print(transition2.shape)
-print(transition1)
-print(transition2)
 emission = sp.load_npz('emission.npz').toarray()
 initial = sp.load_npz('initial.npz').toarray()
 tail = sp.load_npz('tail.npz').toarray()
-# print(transition[hz2id['机']][hz2id['系']])
-# print(transition[hz2id['机']][hz2id['洗']])
 print('Loaded successfully')
 
 def viterbi(py_str):
@@ -58,10 +53,9 @@ def viterbi(py_str):
                     tmp = emission[hz2id[next_state]][output] +\
                         transition1[hz2id[state]][hz2id[next_state]]
                     if len(path) > 1 and path[-2] in hz2id:
-                        print(path, next_state)
-                        tmp += transition2[hz2id[path[-2]]][hz2id[next_state]]
-                    # if state == '机' and (next_state == '洗' or next_state == '系'):
-                        # print('state', state, 'next_state', next_state, 'emission', emission[hz2id[next_state]][output], 'transition', transition[hz2id[state]][hz2id[next_state]])
+                        # print(path, next_state)
+                        tmp = tmp + transition2[hz2id[path[-2]]][hz2id[next_state]] - 0.5 * prior[0][hz2id[next_state]]
+                    
                     p += tmp
                     if p >= ml:
                         argmax = path + [next_state]

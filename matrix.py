@@ -14,6 +14,18 @@ hz2id = hz2id['hz2id']
 with open('word_bag.json', 'r', encoding='utf-8') as json_file:
         word_bag = json.load(json_file)
 
+def prior_p():
+    prior = np.ones([1, CHARACTERS], float)
+    for (k, v) in word_bag.items():
+        for i in range(len(k)):
+            if k[i] in hz2id:
+                prior[0][hz2id[k[i]]] += v
+    row_sum = np.sum(prior, axis=1, keepdims=True)
+    prior = np.log(prior / row_sum)
+    coo = sp.coo_matrix(prior)
+    sp.save_npz('prior.npz', coo)
+    print(prior)
+
 def transition_p():
     with open('dataset.json', 'r', encoding='utf-8') as json_file:
         dataset = json.load(json_file)
@@ -116,11 +128,13 @@ def tail_p():
 
 
 if __name__ == '__main__':
+    print('processing prior matrix')
+    prior_p()
     print('processing transition matrix')
-    transition_p()
+    #transition_p()
     print('processing emission matrix')
-    emission_p()
+    #emission_p()
     print('processing initial matrix')
-    initial_p()
+    #initial_p()
     print('processing tail matrix')
-    tail_p()
+    #tail_p()
