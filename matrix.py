@@ -21,7 +21,7 @@ def transition_p():
     title = dataset['title']
 
     transition1 = np.ones([CHARACTERS, CHARACTERS], float)
-    transition2 = np.ones([CHARACTERS, CHARACTERS], float)
+    transition2 = {}
     print('Loading content')
     for line in content:
         length = len(line)
@@ -29,8 +29,14 @@ def transition_p():
             if line[i] in hz2id and line[i+1] in hz2id:
                 transition1[hz2id[line[i]]][hz2id[line[i+1]]] += 1
             if i+2 < length:
-                if line[i] in hz2id and line[i+2] in hz2id:
-                    transition2[hz2id[line[i]]][hz2id[line[i+2]]] += 1
+                if line[i] in hz2id and line[i+1] in hz2id and line[i+2] in hz2id:
+                    if line[i] not in transition2:
+                        transition2[line[i]] = {}
+                    if line[i+1] not in transition2[line[i]]:
+                        transition2[line[i]][line[i+1]] = {}
+                    if line[i+2] not in transition2[line[i]][line[i+1]]:
+                        transition2[line[i]][line[i+1]][line[i+2]] = 0
+                    transition2[line[i]][line[i+1]][line[i+2]] += 1
     print('Loading title')
     for line in title:
         length = len(line)
@@ -38,18 +44,21 @@ def transition_p():
             if line[i] in hz2id and line[i+1] in hz2id:
                 transition1[hz2id[line[i]]][hz2id[line[i+1]]] += 1
             if i+2 < length:
-                if line[i] in hz2id and line[i+2] in hz2id:
-                    transition2[hz2id[line[i]]][hz2id[line[i+2]]] += 1
+                if line[i] in hz2id and line[i+1] in hz2id and line[i+2] in hz2id:
+                    if line[i] not in transition2:
+                        transition2[line[i]] = {}
+                    if line[i+1] not in transition2[line[i]]:
+                        transition2[line[i]][line[i+1]] = {}
+                    if line[i+2] not in transition2[line[i]][line[i+1]]:
+                        transition2[line[i]][line[i+1]][line[i+2]] = 0
+                    transition2[line[i]][line[i+1]][line[i+2]] += 1
     row_sum1 = np.sum(transition1, axis=1)
     row_sum1 = row_sum1.reshape([CHARACTERS, 1])
     transition1 = np.log(transition1 / row_sum1)
     coo1 = sp.coo_matrix(transition1)
     sp.save_npz('transition1.npz', coo1)
-    row_sum2 = np.sum(transition2, axis=1)
-    row_sum2 = row_sum2.reshape([CHARACTERS, 1])
-    transition2 = np.log(transition2 / row_sum2)
-    coo2 = sp.coo_matrix(transition2)
-    sp.save_npz('transition2.npz', coo2)
+    with open('transition2.json', 'w', encoding='utf-8') as json_file:
+        json.dump(transition2, json_file, ensure_ascii=False)
     return
 
 
@@ -119,8 +128,8 @@ if __name__ == '__main__':
     print('processing transition matrix')
     transition_p()
     print('processing emission matrix')
-    emission_p()
+    # emission_p()
     print('processing initial matrix')
-    initial_p()
+    # initial_p()
     print('processing tail matrix')
-    tail_p()
+    # tail_p()

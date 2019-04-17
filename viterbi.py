@@ -17,15 +17,14 @@ with open('py.json', 'r', encoding='utf-8') as json_file:
     py = json.load(json_file)
 py = py['py']
 
+with open('transition2_mini.json', 'r', encoding='utf-8') as json_file:
+    transition2 = json.load(json_file)
+
 with open('./dataset/table/py2hz.txt', 'r', encoding='gbk') as f:
     lines = f.readlines()
 
 transition1 = sp.load_npz('transition1.npz').toarray()
-transition2 = sp.load_npz('transition2.npz').toarray()
-print(transition1.shape)
-print(transition2.shape)
-print(transition1)
-print(transition2)
+
 emission = sp.load_npz('emission.npz').toarray()
 initial = sp.load_npz('initial.npz').toarray()
 tail = sp.load_npz('tail.npz').toarray()
@@ -55,13 +54,19 @@ def viterbi(py_str):
                 # print(T)
                 for state in states:
                     (path, p) = T[state]
-                    tmp = emission[hz2id[next_state]][output] +\
-                        transition1[hz2id[state]][hz2id[next_state]]
-                    if len(path) > 1 and path[-2] in hz2id:
-                        print(path, next_state)
-                        tmp += transition2[hz2id[path[-2]]][hz2id[next_state]]
-                    # if state == '»ú' and (next_state == 'Ï´' or next_state == 'Ïµ'):
-                        # print('state', state, 'next_state', next_state, 'emission', emission[hz2id[next_state]][output], 'transition', transition[hz2id[state]][hz2id[next_state]])
+                    if len(path) > 1:
+                        if (path[-2] not in transition2) or (state not in transition2[path[-2]]):
+                            tmp = emission[hz2id[next_state]][output] +\
+                                np.log(1 / CHARACTERS) 
+                        elif next_state in transition2[path[-2]][state]:
+                            tmp = emission[hz2id[next_state]][output] +\
+                                transition2[path[-2]][state][next_state]
+                        else:
+                            tmp = emission[hz2id[next_state]][output] +\
+                                transition2[path[-2]][state]['none']
+                    else:
+                        tmp = emission[hz2id[next_state]][output] +\
+                            transition1[hz2id[state]][hz2id[next_state]]
                     p += tmp
                     if p >= ml:
                         argmax = path + [next_state]
@@ -89,7 +94,7 @@ def viterbi(py_str):
         if p > ml:
             result = path
             ml = p
-    print('result', result)
+    # print('result', result)
     return result
 
 
