@@ -20,36 +20,36 @@ def transition_p():
     content = dataset['content']
     title = dataset['title']
 
-    transition = np.ones([CHARACTERS, CHARACTERS], float)
+    transition1 = np.ones([CHARACTERS, CHARACTERS], float)
+    transition2 = np.ones([CHARACTERS, CHARACTERS], float)
     print('Loading content')
     for line in content:
         length = len(line)
         for i in range(length-1):
             if line[i] in hz2id and line[i+1] in hz2id:
-                transition[hz2id[line[i]]][hz2id[line[i+1]]] += 1
+                transition1[hz2id[line[i]]][hz2id[line[i+1]]] += 1
+            if i+2 < length:
+                if line[i] in hz2id and line[i+2] in hz2id:
+                    transition2[hz2id[line[i]]][hz2id[line[i+2]]] += 1
     print('Loading title')
     for line in title:
         length = len(line)
         for i in range(length-1):
             if line[i] in hz2id and line[i+1] in hz2id:
-                transition[hz2id[line[i]]][hz2id[line[i+1]]] += 1
-    for (k, v) in word_bag.items():
-        if len(k) < 2:
-            continue
-        for i in range(len(k) - 1):
-            if k[i] in hz2id and k[i + 1] in hz2id:
-                transition[hz2id[k[i]]][hz2id[k[i+1]]] += v
-    print(transition[hz2id['机']][hz2id['系']])
-    print(transition[hz2id['机']][hz2id['洗']])
-    row_sum = np.sum(transition, axis=1)
-    print(row_sum.shape)
-    row_sum = row_sum.reshape([CHARACTERS, 1])
-    print(row_sum[hz2id['机']])
-    transition = np.log(transition / row_sum)
-    print(transition[hz2id['机']][hz2id['系']])
-    print(transition[hz2id['机']][hz2id['洗']])
-    coo = sp.coo_matrix(transition)
-    sp.save_npz('transition.npz', coo)
+                transition1[hz2id[line[i]]][hz2id[line[i+1]]] += 1
+            if i+2 < length:
+                if line[i] in hz2id and line[i+2] in hz2id:
+                    transition2[hz2id[line[i]]][hz2id[line[i+2]]] += 1
+    row_sum1 = np.sum(transition1, axis=1)
+    row_sum1 = row_sum1.reshape([CHARACTERS, 1])
+    transition1 = np.log(transition1 / row_sum1)
+    coo1 = sp.coo_matrix(transition1)
+    sp.save_npz('transition1.npz', coo1)
+    row_sum2 = np.sum(transition2, axis=1)
+    row_sum2 = row_sum2.reshape([CHARACTERS, 1])
+    transition2 = np.log(transition2 / row_sum2)
+    coo2 = sp.coo_matrix(transition2)
+    sp.save_npz('transition2.npz', coo2)
     return
 
 
@@ -117,10 +117,10 @@ def tail_p():
 
 if __name__ == '__main__':
     print('processing transition matrix')
-    # transition_p()
+    transition_p()
     print('processing emission matrix')
-    # emission_p()
+    emission_p()
     print('processing initial matrix')
-    # initial_p()
+    initial_p()
     print('processing tail matrix')
     tail_p()

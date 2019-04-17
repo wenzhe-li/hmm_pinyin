@@ -20,7 +20,12 @@ py = py['py']
 with open('./dataset/table/py2hz.txt', 'r', encoding='gbk') as f:
     lines = f.readlines()
 
-transition = sp.load_npz('transition.npz').toarray()
+transition1 = sp.load_npz('transition1.npz').toarray()
+transition2 = sp.load_npz('transition2.npz').toarray()
+print(transition1.shape)
+print(transition2.shape)
+print(transition1)
+print(transition2)
 emission = sp.load_npz('emission.npz').toarray()
 initial = sp.load_npz('initial.npz').toarray()
 tail = sp.load_npz('tail.npz').toarray()
@@ -37,31 +42,37 @@ def viterbi(py_str):
     for state in states:
         if state in hz2id:
             T[state] = ([state], initial[0][hz2id[state]])
-    
     for output in observe_seq[1:]:
         # print(T)
         U = {}
         next_states = [c for c in lines[output].split()[1:]]
-        
+        # print(next_states)
         for next_state in next_states:
             # pdb.set_trace()
             if next_state in hz2id:
                 argmax = None
                 ml = float('-inf')
+                # print(T)
                 for state in states:
                     (path, p) = T[state]
                     tmp = emission[hz2id[next_state]][output] +\
-                        transition[hz2id[state]][hz2id[next_state]]
+                        transition1[hz2id[state]][hz2id[next_state]]
+                    if len(path) > 1 and path[-2] in hz2id:
+                        print(path, next_state)
+                        tmp += transition2[hz2id[path[-2]]][hz2id[next_state]]
                     # if state == '»ú' and (next_state == 'Ï´' or next_state == 'Ïµ'):
                         # print('state', state, 'next_state', next_state, 'emission', emission[hz2id[next_state]][output], 'transition', transition[hz2id[state]][hz2id[next_state]])
                     p += tmp
-                    if p > ml:
+                    if p >= ml:
                         argmax = path + [next_state]
                         ml = p
+                if argmax is None:
+                    print(path, tmp, p)
                 U[next_state] = (argmax, ml)
                 # print(U)
         
         T = U
+        
         states = next_states
         
         # print(T)
@@ -78,6 +89,7 @@ def viterbi(py_str):
         if p > ml:
             result = path
             ml = p
+    print('result', result)
     return result
 
 
@@ -90,11 +102,13 @@ if __name__ == '__main__':
     with open(path_i, 'r', encoding='utf-8') as f:
         input_str = f.readlines()
     output_str = []
+    '''for s in input_str:
+        output_str.append(''.join(viterbi(s)))'''
     for s in input_str:
         try:
             output_str.append(''.join(viterbi(s)))
         except:
-            print(s)
+            output_str.append(s)
     with open(path_o, 'w', encoding='utf-8') as f:
         for s in output_str:
             f.write(s + '\n')
